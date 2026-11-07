@@ -69,21 +69,16 @@ Solution: Unsupervised detector that identifies statistical deviations without r
 
 ### Autoencoder Keras
 
-**Architecture:**
+**Architecture (Encoder-Decoder):**
+
 ```
-Input (87)
-    ↓
-Dense (64, ReLU)
-    ↓
-Dense (32, ReLU)
-    ↓
-Dense (16, ReLU)  ← Bottleneck
-    ↓
-Dense (32, ReLU)
-    ↓
-Dense (64, ReLU)
-    ↓
-Output (87, Sigmoid)
+┌─────────┐     ┌─────────┐     ┌─────────┐     ┌─────────┐     ┌─────────┐     ┌─────────┐     ┌─────────┐
+│ INPUT   │     │ ENCODER │     │ ENCODER │     │BOTTLENECK     │ DECODER │     │ DECODER │     │ OUTPUT  │
+│  87×●   │────→│  64×●   │────→│  32×●   │────→│  16×●   │────→│  32×●   │────→│  64×●   │────→│  87×●   │
+│   ●●●   │     │  ●●●●   │     │  ●●●●   │     │  ●●●●  │     │  ●●●●   │     │  ●●●●   │     │   ●●●   │
+│   ●●●   │     │  ●●●●   │     │  ●●●●   │     │        │     │  ●●●●   │     │  ●●●●   │     │   ●●●   │
+│   ...   │     │  ...    │     │  ...    │     │        │     │  ...    │     │  ...    │     │   ...   │
+└─────────┘     └─────────┘     └─────────┘     └─────────┘     └─────────┘     └─────────┘     └─────────┘
 ```
 
 **Configuration:**
@@ -91,6 +86,7 @@ Output (87, Sigmoid)
 - Batch size: 2048
 - Adam optimizer
 - Loss: Binary Crossentropy
+- Activation: ReLU (encoder/decoder) → Sigmoid (output)
 
 ### Combined Score
 ```
