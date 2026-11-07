@@ -109,19 +109,3 @@ FROM ml_score_risk.anomaly_scores_daily
 WHERE run_date = CURRENT_DATE;
 ```
 
-## Limitations
-
-1. Manual validation required
-2. Fixed contamination (5%)
-3. Black-box (no interpretability)
-4. Sensitive to abrupt changes
-5. Dependency on mart
-
-## Next Steps
-
-- Feature importance for explainability
-- Real-time API (<100ms)
-- Manual validation of false positives
-- Ensemble with LOF/Elliptic Envelope
-- Continuous concept drift monitoring
-
