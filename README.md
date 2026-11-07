@@ -68,10 +68,29 @@ Solution: Unsupervised detector that identifies statistical deviations without r
 - Isolates global outliers
 
 ### Autoencoder Keras
-- Architecture: 87 → 64 → 32 → 16 → 32 → 64 → 87
+
+**Architecture:**
+```
+Input (87)
+    ↓
+Dense (64, ReLU)
+    ↓
+Dense (32, ReLU)
+    ↓
+Dense (16, ReLU)  ← Bottleneck
+    ↓
+Dense (32, ReLU)
+    ↓
+Dense (64, ReLU)
+    ↓
+Output (87, Sigmoid)
+```
+
+**Configuration:**
 - Early stopping (patience=5)
 - Batch size: 2048
 - Adam optimizer
+- Loss: Binary Crossentropy
 
 ### Combined Score
 ```
