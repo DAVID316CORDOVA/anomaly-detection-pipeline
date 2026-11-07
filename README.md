@@ -1,144 +1,127 @@
-﻿# Detector de Anomalías — Detección No Supervisada de Comportamiento Anómalo
+# Anomaly Detection — Unsupervised Detection of Anomalous Behavior
 
-Modelo no supervisado que identifica jugadores con patrones de comportamiento estadísticamente inusuales mediante Isolation Forest y Autoencoder Keras. Complementa la detección supervisada del Score de Riesgo capturando comportamientos nuevos no etiquetados previamente.
+Unsupervised model that identifies players with statistically unusual behavior patterns through Isolation Forest and Autoencoder Keras. Complements supervised Risk Score detection by capturing new behaviors not previously labeled.
 
-**Estado:** En producción | **Schedule:** 13:00 UTC diariamente (08:00 Lima) | **AUC:** 0.8076
+**Status:** In production | **Schedule:** 13:00 UTC daily (08:00 Lima) | **AUC:** 0.8076
 
-![Gráficos Detector Anomalías](./graficos_anomaly_detection.png)
+![Anomaly Detection Graphs](./graficos_anomaly_detection.png)
 
-## Resumen Ejecutivo
+## Executive Summary
 
-El Detector de Anomalías analiza **655,070 jugadores activos** mediante dos algoritmos complementarios:
+The Anomaly Detector analyzes **655,070 active players** using two complementary algorithms:
 
-- **Isolation Forest:** Detecta outliers globales (jugadores estadísticamente lejanos)
-- **Autoencoder Keras:** Detecta patrones difíciles de reconstruir (comportamiento inusual)
+- **Isolation Forest:** Detects global outliers (statistically distant players)
+- **Autoencoder Keras:** Detects patterns difficult to reconstruct (unusual behavior)
 
-**Resultados:** AUC combinado **0.8076** | **29,908 jugadores críticos** (4.6%) | **Keras 7x más rápido que PyTorch en CPU**
+**Results:** Combined AUC **0.8076** | **29,908 critical players** (4.6%) | **Keras 7x faster than PyTorch on CPU**
 
-## Problema y Contexto
+## Problem and Context
 
-El Score de Riesgo supervisado solo detecta patrones etiquetados previamente (4,732 de 655K jugadores). Esto deja déficit crítico:
+The supervised Risk Score only detects previously labeled patterns (4,732 of 655K players). This leaves critical gaps:
 
-1. **Patrones nuevos:** Comportamientos anómalos nunca vistos
-2. **Falsos negativos:** Jugadores riesgosos sin etiquetar
-3. **Evolución dinámica:** Riesgo que emerge recientemente
+1. **New patterns:** Anomalous behaviors never seen before
+2. **False negatives:** Risky players without labels
+3. **Dynamic evolution:** Risk emerging recently
 
-Solución: Detector no supervisado que identifique desviaciones estadísticas sin depender de etiquetas históricas.
+Solution: Unsupervised detector that identifies statistical deviations without relying on historical labels.
 
-## Análisis Exploratorio de Datos (EDA)
+## Exploratory Data Analysis (EDA)
 
-### Distribución de Jugadores por Segmento
+### Player Distribution by Segment
 
-| Segmento | Rango Score | Jugadores | Porcentaje | Interpretación |
-|----------|-------------|-----------|-----------|-----------------|
-| Normal | 0.00-0.70 | 465,129 | 70.9% | Comportamiento típico, sin señales de alerta |
-| Moderado | 0.70-0.85 | 102,403 | 15.6% | Comportamiento ligeramente desviado, monitorear |
-| Alto | 0.85-0.95 | 60,209 | 9.2% | Comportamiento sospechoso, revisión manual recomendada |
-| Crítico | > 0.95 | 29,908 | 4.6% | Comportamiento muy anómalo, acción inmediata |
+| Segment | Score Range | Players | Percentage | Interpretation |
+|---------|-------------|---------|-----------|-----------------|
+| Normal | 0.00-0.70 | 465,129 | 70.9% | Typical behavior, no alerts |
+| Moderate | 0.70-0.85 | 102,403 | 15.6% | Slightly deviant, monitor |
+| High | 0.85-0.95 | 60,209 | 9.2% | Suspicious, manual review recommended |
+| Critical | > 0.95 | 29,908 | 4.6% | Very anomalous, immediate action |
 
-**Insight:** Concentración en Normal (70.9%) indica que IF+AE son selectivos, reduciendo falsos positivos.
+**Insight:** Concentration in Normal (70.9%) indicates IF+AE are selective, reducing false positives.
 
-### Análisis de Features
+### Feature Analysis
 
-**87 Features por jugador:**
-- 82 del mart (`mart_player_features`): apuestas, transacciones, KYC, IPs, bonos
-- 3 de velocidad depósito→retiro (timestamp)
-- 2 de score supervisado del día
+**87 Features per player:**
+- 82 from mart: bets, transactions, KYC, IPs, bonuses
+- 3 deposit-to-withdrawal velocity features
+- 2 supervised score features
 
-**Período:** Desde 2025-01-01 (datos recientes)
+**Period:** Since 2025-01-01
 
-## Experimento: PyTorch vs Keras
+## Experiment: PyTorch vs Keras
 
-### Resultados Comparativos
+### Comparative Results
 
-| Métrica | PyTorch | Keras | Ganador | Razón |
-|---------|---------|-------|---------|-------|
-| **AUC Combinado** | 0.8046 | **0.8076** | Keras | +0.003 mejor discriminación |
-| **Loss Final (AE)** | 332,021 | **220,317** | Keras | -33.6% menor error |
-| **Épocas Entrenadas** | 18 | **12** | Keras | Early stopping más rápido |
-| **Tiempo AE** | 2.2 min | **0.3 min** | Keras | **7x más rápido en CPU** |
-| **Críticos Detectados** | 28,736 | 29,908 | Similar | Cobertura equivalente |
+| Metric | PyTorch | Keras | Winner | Reason |
+|--------|---------|-------|---------|-------|
+| **Combined AUC** | 0.8046 | **0.8076** | Keras | +0.003 better |
+| **Final Loss (AE)** | 332,021 | **220,317** | Keras | -33.6% lower |
+| **AE Time** | 2.2 min | **0.3 min** | Keras | **7x faster** |
+| **Epochs** | 18 | **12** | Keras | Early stopping |
 
-### Por Qué Keras Ganó
+**Decision:** Keras selected for production.
 
-1. **Mejor AUC:** 0.8076 vs 0.8046 → discriminación superior
-2. **Menor Loss:** 220K vs 332K → mejor reconstrucción
-3. **Velocidad:** 0.3 min vs 2.2 min → **7x más rápido**
-   - TensorFlow usa BLAS vectorizado para CPU
-   - PyTorch overhead mayor sin GPU
-4. **Estabilidad:** Converge más rápido
+## Implemented Solution
 
-**Decisión:** Keras seleccionado para producción.
+### Isolation Forest
+- 300 isolation trees
+- Contamination = 5%
+- Isolates global outliers
 
-## Solución Implementada
-
-### Algoritmos
-
-**Isolation Forest:**
-- 300 árboles de aislamiento
-- Contamination = 5% (asume top 5% como anómalos)
-
-**Autoencoder Keras:**
-- Arquitectura: 87 → 64 → 32 → 16 → 32 → 64 → 87
-- Error de reconstrucción alto = patrón inusual
+### Autoencoder Keras
+- Architecture: 87 → 64 → 32 → 16 → 32 → 64 → 87
 - Early stopping (patience=5)
 - Batch size: 2048
+- Adam optimizer
 
-**Score Combinado:**
+### Combined Score
 ```
-combined_score = 0.5 × IF_percentil + 0.5 × AE_percentil
+combined_score = 0.5 × IF_percentile + 0.5 × AE_percentile
 ```
 
-## Resultados de Producción
+## Production Results
 
-| Métrica | Valor | Interpretación |
-|---------|-------|-----------------|
-| Modelo | Keras TF 2.17 | Elegido por AUC + velocidad |
-| AUC Combinado | 0.7247 | Producción (0.81 en experimento) |
-| Jugadores Analizados | 655,070 | 100% base activa |
-| **Críticos (> 0.95)** | **28,753** | Requieren revisión inmediata |
-| Altos (0.85-0.95) | 65,762 | Revisión manual |
-| Moderados (0.70-0.85) | 95,426 | Monitoreo |
-| Duración Total | ~2.5 min | Para 655K jugadores |
+| Metric | Value | Interpretation |
+|--------|-------|-----------------|
+| Combined AUC | 0.7247 | Production (vs 0.81 experiment) |
+| Critical | 28,753 | Require immediate review |
+| High | 65,762 | Manual review |
+| Duration | ~2.5 min | 655K players |
+| Model | Keras TF 2.17 | Selected |
 
-## Cómo Ejecutarlo
+## How to Run
 
-### En Airflow
-
+### Airflow
 ```bash
 airflow dags trigger orse_anomaly_detection
 ```
 
-### Manualmente
-
+### Manual
 ```bash
 ssh olimpo-ml
-source ~/ml-env/bin/activate
 python3 ~/olimpo/anomaly_detection_v3.py
 ```
 
-### Verificar Resultados
-
+### Verify
 ```sql
 SELECT COUNT(*) as total,
-       SUM(CASE WHEN combined_score > 0.95 THEN 1 ELSE 0 END) as criticos,
-       ROUND(AVG(combined_score), 3) as score_promedio
+       SUM(CASE WHEN combined_score > 0.95 THEN 1 ELSE 0 END) as critical
 FROM ml_score_risk.anomaly_scores_daily
 WHERE run_date = CURRENT_DATE;
 ```
 
-## Limitaciones
+## Limitations
 
-1. Validación manual requerida
-2. Contamination fijo (5%)
-3. Black-box (sin interpretabilidad)
-4. Sensible a cambios abruptos
-5. Dependencia del mart
+1. Manual validation required
+2. Fixed contamination (5%)
+3. Black-box (no interpretability)
+4. Sensitive to abrupt changes
+5. Dependency on mart
 
-## Próximos Pasos
+## Next Steps
 
-- Feature importance para explicabilidad
-- API real-time (<100ms)
-- Validación manual de falsos positivos
-- Ensemble con LOF/Elliptic Envelope
-- Monitoreo de concept drift
+- Feature importance for explainability
+- Real-time API (<100ms)
+- Manual validation of false positives
+- Ensemble with LOF/Elliptic Envelope
+- Continuous concept drift monitoring
+
